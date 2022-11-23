@@ -110,10 +110,10 @@ def populational_isotropic_ES(expr="", validator=None, dimension_gen_interval=(0
         for parent in population:
             for j in range(math.ceil(num_offspring / num_parents)):
                 mutated_ind = {'dim': {}, 'sigma': None}
-                new_sigma = parent['sigma'] * math.exp(np.random.normal() * sigma_var ** 2)  # muta o sigma
+                new_sigma = parent['sigma'] * math.exp(np.random.normal(0, sigma_var ** 2))  # muta o sigma
                 mutated_ind['sigma'] = new_sigma
                 for key in parent['dim']:  # muta cada uma das dimensões
-                    mutated_ind['dim'][key] = parent['dim'][key] + new_sigma * np.random.normal()
+                    mutated_ind['dim'][key] = parent['dim'][key] + np.random.normal(0, new_sigma)
 
                 mutated_ind['eval'] = evaluate(expr, validator, **mutated_ind['dim'])  # faz avaliação
                 offspring.append(mutated_ind)
@@ -125,8 +125,9 @@ def populational_isotropic_ES(expr="", validator=None, dimension_gen_interval=(0
     return population
 
 
-def populational_non_isotropic_ES(expr="", validator=None, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
-                              num_parents=0, num_offspring=0):
+def populational_non_isotropic_ES(expr="", validator=None, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100,
+                                  seed=0,
+                                  num_parents=0, num_offspring=0):
     np.random.seed(seed)
     population = []
     t = 0
@@ -150,8 +151,9 @@ def populational_non_isotropic_ES(expr="", validator=None, dimension_gen_interva
             for j in range(math.ceil(num_offspring / num_parents)):
                 mutated_ind = {'dim': {}, 'sigma': {}}
                 for key in parent['dim']:  # muta cada uma das dimensões e seus sigmas
-                    mutated_ind['sigma'][key] = parent['sigma'][key] * math.exp(np.random.normal() * sigma_var ** 2)
-                    mutated_ind['dim'][key] = parent['dim'][key] + mutated_ind['sigma'][key] * np.random.normal()
+                    mutated_ind['sigma'][key] = parent['sigma'][key] * math.exp(
+                        np.random.normal(0, sigma_var ** 2)) * math.exp(np.random.normal(0, sigma_var ** 2))
+                    mutated_ind['dim'][key] = parent['dim'][key] + np.random.normal(0, mutated_ind['sigma'][key])
 
                 mutated_ind['eval'] = evaluate(expr, validator, **mutated_ind['dim'])  # faz avaliação
                 offspring.append(mutated_ind)
@@ -234,74 +236,89 @@ class Individual:
 
 
 class ESAlgorithm:
-    evaluation_function = None
+    evaluation_expression = None
     interval_validator = None
     population = []
     population_history = []
     success_history = []
+    variable_bounds = {}
 
     def __init__(self):
-        self.evaluation_function = None
+        self.evaluation_expression = None
         self.interval_validator = None
         self.population = []
         self.population_history = []
         self.success_history = []
         pass
 
-    def set_evaluation_function(self, func):
-        self.evaluation_function = func
+    def set_evaluation_expression(self, expression):
+        self.evaluation_expression = expression
 
-    def set_interval_validator(self, func):
-        self.interval_validator = func
+    def set_interval_validator(self, expression):
+        self.interval_validator = expression
 
-    def simple_mutation(self, individual, sigma):
-        dims = individual.get_dimensions()
-        new_ind = Individual()
+    def set_variable_bounds(self, variable, upper_bound=float('inf'), upper_bound_closed=True,
+                            lower_bound=float('-inf'), lower_bound_closed=True):
+        self.variable_bounds[variable] = {'upper':
+                                              {'value': upper_bound, 'closed': upper_bound_closed},
+                                          'lower':
+                                              {'value': lower_bound, 'closed': lower_bound_closed}}
 
-        for key in dims:
-            dim_value = dims[key] + sigma * np.random.normal()
-            new_ind.add_dimension(key, dim_value, sigma)
+    def evaluate(self, expr, **kwargs):
+        return parser.parse(expr).evaluate(kwargs)
 
-        new_ind.set_evaluation(self.evaluation_function(new_ind.get_dimensions()))
-        print(f"Anterior: {individual}")
-        print(f"Novo: {new_ind}")
-        return new_ind
+    def validate(self, individual):
+        validated_individual = individual
+        for key in individual['dim']:
+            if self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] > self.variable_bounds[key]['upper']['value']:
+                validated_individual['dim'][key] = self.variable_bounds[key]['upper']['value']
+            elif not self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] >= self.variable_bounds[key]['upper']['value']:
+                validated_individual['dim'][key] = self.variable_bounds[key]['upper']['value'] - 0.0000001
+            elif self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] < self.variable_bounds[key]['lower']['value']:
+                validated_individual['dim'][key] = self.variable_bounds[key]['lower']['value']
+            elif not self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] <= self.variable_bounds[key]['lower']['value']:
+                validated_individual['dim'][key] = self.variable_bounds[key]['lower']['value'] + 0.0000001
 
-    def run_one_plus_one(self, first_ind={}, sigma=1.0, c=0.817, n=10, iterations=100, seed=0):
+        return validated_individual
+
+    def populational_non_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100,
+                                      seed=0,
+                                      num_parents=0, num_offspring=0):
         np.random.seed(seed)
+        population = []
         t = 0
-        current_sigma = sigma
-        sigmas = {}
-        for key in first_ind:
-            sigmas[key] = current_sigma
 
-        ind = Individual()
-        ind.set_info(first_ind.copy(), sigmas, self.evaluation_function(first_ind))
+        for i in range(num_parents):
+            individual = {'dim': {}, 'sigma': {}}
+            for v in parser.parse(self.evaluation_expression).variables():
+                individual['dim'][v] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
+                individual['sigma'][v] = np.random.uniform(0, 1, 1)[0]
+            individual = self.validate(individual)
+            evaluation = self.evaluate(self.evaluation_expression, **individual['dim'])
+            individual['eval'] = evaluation
+            population.append(individual)
 
-        self.population.append(ind)
-        calculated_error = None
+        # todo: mudar criterio para chamadas da função objetivo talvez
 
-        for i in range(iterations):
+        for i in range(iter):
             t += 1
-            mutated_ind = self.simple_mutation(ind, current_sigma)
+            offspring = []
 
-            if mutated_ind < ind:
-                ind = mutated_ind
-                self.success_history.append(1)
-            else:
-                self.success_history.append(0)
+            for parent in population:
+                for j in range(math.ceil(num_offspring / num_parents)):
+                    mutated_ind = {'dim': {}, 'sigma': {}}
+                    for key in parent['dim']:  # muta cada uma das dimensões e seus sigmas
+                        mutated_ind['sigma'][key] = parent['sigma'][key] * math.exp(
+                            np.random.normal(0, sigma_var ** 2)) * math.exp(np.random.normal(0, sigma_var ** 2))
+                        mutated_ind['dim'][key] = parent['dim'][key] + np.random.normal(0, mutated_ind['sigma'][key])
 
-            self.population.append(mutated_ind)
+                    mutated_ind = self.validate(mutated_ind)
+                    mutated_ind['eval'] = self.evaluate(self.evaluation_expression,
+                                                   **mutated_ind['dim'])  # faz avaliação
+                    offspring.append(mutated_ind)
 
-            if t % n == 0:
-                # get successes and failures from at most 10n entries in A
-                window = self.success_history[-10 * n:]
-                success = sum(window)
-                failure = abs(success - len(window))
-                ps = success / (success + failure)
-                if ps < 1 / 5:
-                    current_sigma = current_sigma * c
-                elif ps > 1 / 5:
-                    current_sigma = current_sigma / c
+            offspring_and_parents = population + offspring
+            best = sorted(offspring_and_parents, key=lambda i: i['eval'])
+            population = best[0:num_parents]
 
-        return self.population, ind
+        return population
