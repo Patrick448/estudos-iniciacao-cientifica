@@ -58,13 +58,13 @@ def alg1plus1ES(expr="", validator=None, sigma=1.0, c=0.817, n=10, iter=100, see
             ind = mutated_ind
             phi = new_phi
             A.append(1)
-            pass
+            p.append(mutated_ind)
+            obj_func_hist.append(new_phi)
         else:
             A.append(0)
-            pass
 
-        p.append(mutated_ind)
-        obj_func_hist.append(new_phi)
+
+
         if t % n == 0:
             # get successes and failures from at most 10n entries in A
             window = A[-10 * n:]
@@ -281,8 +281,47 @@ class ESAlgorithm:
 
         return validated_individual
 
-    def populational_non_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100,
-                                      seed=0,
+
+    def populational_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
+                                      num_parents=0, num_offspring=0):
+        np.random.seed(seed)
+        population = []
+        t = 0
+
+        for i in range(num_parents):
+            individual = {'dim': {}, 'sigma': None}
+            for v in parser.parse(self.evaluation_expression).variables():
+                individual['dim'][v] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
+            individual['sigma'] = np.random.uniform(0, 1, 1)[0]
+            individual = self.validate(individual)
+            evaluation = self.evaluate(self.evaluation_expression, **individual['dim'])
+            individual['eval'] = evaluation
+            population.append(individual)
+
+        # todo: mudar criterio para chamadas da função objetivo talvez
+
+        for i in range(iter):
+            t += 1
+            offspring = []
+
+            for parent in population:
+                for j in range(math.ceil(num_offspring / num_parents)):
+                    mutated_ind = {'dim': {}, 'sigma': None}
+                    mutated_ind['sigma'] = parent['sigma'] * math.exp(np.random.normal(0, sigma_var ** 2))  # muta o sigma
+                    for key in parent['dim']:  # muta cada uma das dimensões e seus sigmas
+                        mutated_ind['dim'][key] = parent['dim'][key] + np.random.normal(0, mutated_ind['sigma'])
+                    mutated_ind = self.validate(mutated_ind)
+                    mutated_ind['eval'] = self.evaluate(self.evaluation_expression, **mutated_ind['dim'])  # faz avaliação
+                    offspring.append(mutated_ind)
+
+            offspring_and_parents = population + offspring
+            best = sorted(offspring_and_parents, key=lambda i: i['eval'])
+            population = best[0:num_parents]
+
+        return population
+
+
+    def populational_non_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
                                       num_parents=0, num_offspring=0):
         np.random.seed(seed)
         population = []
