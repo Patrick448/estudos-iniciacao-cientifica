@@ -282,6 +282,53 @@ class ESAlgorithm:
         return validated_individual
 
 
+    def one_plus_one_ES(self, sigma=1.0, c=0.817, n=10, iter=100, seed=0):
+        np.random.seed(seed)
+        p = []
+        A = []
+        t = 0
+        ind = {'dim': {}}
+        obj_func_hist = []
+
+        for v in parser.parse(self.evaluation_expression).variables():
+            ind['dim'][v] = 0
+
+        ind = self.validate(ind)
+        ind['eval'] = self.evaluate(self.evaluation_expression, **ind['dim'])
+        p.append(ind)
+
+        for i in range(iter):
+            t += 1
+            mutated_ind = {'dim':{}}
+
+            # mutate individual
+            for key in ind['dim']:
+                mutated_ind['dim'][key] = ind['dim'][key] + sigma * np.random.normal()
+
+            mutated_ind = self.validate(mutated_ind)
+            # calculate new phi based on the mutation
+            mutated_ind['eval'] = self.evaluate(self.evaluation_expression, **mutated_ind['dim'])
+
+            if mutated_ind['eval'] < ind['eval']:
+                ind = mutated_ind
+                A.append(1)
+                p.append(mutated_ind)
+            else:
+                A.append(0)
+
+            if t % n == 0:
+                # get successes and failures from at most 10n entries in A
+                window = A[-10 * n:]
+                success = sum(window)
+                failure = abs(success - len(window))
+                ps = success / (success + failure)
+                if ps < 1 / 5:
+                    sigma = sigma * c
+                elif ps > 1 / 5:
+                    sigma = sigma / c
+
+        return p
+
     def populational_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
                                       num_parents=0, num_offspring=0):
         np.random.seed(seed)
