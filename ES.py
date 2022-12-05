@@ -281,7 +281,6 @@ class ESAlgorithm:
 
         return validated_individual
 
-
     def one_plus_one_ES(self, sigma=1.0, c=0.817, n=10, iter=100, seed=0):
         np.random.seed(seed)
         p = []
@@ -366,7 +365,6 @@ class ESAlgorithm:
             population = best[0:num_parents]
 
         return population
-
 
     def populational_non_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
                                       num_parents=0, num_offspring=0):
