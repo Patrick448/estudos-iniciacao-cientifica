@@ -237,19 +237,31 @@ class Individual:
 
 class ESAlgorithm:
     evaluation_expression = None
+    evaluation_function = None
     interval_validator = None
     population = []
     population_history = []
     success_history = []
     variable_bounds = {}
+    variable_bounds_test = []
+    using_global_bounds = False
+    global_variable_bounds = {}
+    dimension_mapping = []
 
     def __init__(self):
         self.evaluation_expression = None
+        self.evaluation_function = None
         self.interval_validator = None
         self.population = []
         self.population_history = []
         self.success_history = []
-        pass
+        self.variable_bounds = {}
+        self.using_global_bounds = False
+        self.global_variable_bounds = {'upper': float('inf'), 'lower': float('-inf')}
+        self.variable_bounds_test = []
+
+    def set_evaluation_function(self, func):
+        self.evaluation_function = func
 
     def set_evaluation_expression(self, expression):
         self.evaluation_expression = expression
@@ -257,9 +269,24 @@ class ESAlgorithm:
     def set_interval_validator(self, expression):
         self.interval_validator = expression
 
+    def set_dimension_mapping(self, mapping):
+        self.dimension_mapping = mapping
+
+    def set_global_variable_bounds(self, upper_bound=float('inf'), lower_bound=float('-inf')):
+        self.using_global_bounds = True
+        self.global_variable_bounds = {'upper': upper_bound, 'lower': lower_bound}
+
     def set_variable_bounds(self, variable, upper_bound=float('inf'), upper_bound_closed=True,
                             lower_bound=float('-inf'), lower_bound_closed=True):
+        self.using_global_bounds=False
         self.variable_bounds[variable] = {'upper':
+                                              {'value': upper_bound, 'closed': upper_bound_closed},
+                                          'lower':
+                                              {'value': lower_bound, 'closed': lower_bound_closed}}
+
+    def set_variable_bounds_test(self, variable, upper_bound=float('inf'), upper_bound_closed=True,
+                            lower_bound=float('-inf'), lower_bound_closed=True):
+        self.variable_bounds_test[variable] = {'upper':
                                               {'value': upper_bound, 'closed': upper_bound_closed},
                                           'lower':
                                               {'value': lower_bound, 'closed': lower_bound_closed}}
@@ -268,6 +295,8 @@ class ESAlgorithm:
         return parser.parse(expr).evaluate(kwargs)
 
     def validate(self, individual):
+
+        #todo: check if global bounds are enabled, if true validate using it. if false, validade like before
         validated_individual = individual
         for key in individual['dim']:
             if self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] > self.variable_bounds[key]['upper']['value']:
@@ -278,6 +307,34 @@ class ESAlgorithm:
                 validated_individual['dim'][key] = self.variable_bounds[key]['lower']['value']
             elif not self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] <= self.variable_bounds[key]['lower']['value']:
                 validated_individual['dim'][key] = self.variable_bounds[key]['lower']['value'] + 0.0000001
+
+        return validated_individual
+
+    def validate_test(self, individual):
+
+        # todo: check if global bounds are enabled, if true validate using it. if false, validade like before
+        validated_individual = individual
+
+        upper_bound = self.global_variable_bounds['upper']
+        lower_bound = self.global_variable_bounds['lower']
+        upper_bound_closed = True
+        lower_bound_closed = True
+        for i, value in enumerate(individual['dim']):
+
+            if not self.using_global_bounds:
+                upper_bound = self.variable_bounds_test[i]['upper']['value']
+                lower_bound = self.variable_bounds_test[i]['lower']['value']
+                upper_bound_closed = self.variable_bounds_test[i]['upper']['closed']
+                lower_bound_closed = self.variable_bounds_test[i]['lower']['closed']
+
+            if upper_bound_closed and value > upper_bound:
+                validated_individual['dim'][i] = upper_bound
+            elif not upper_bound_closed and value >= upper_bound:
+                validated_individual['dim'][i] = upper_bound - 0.0000001
+            elif lower_bound_closed and value < lower_bound:
+                validated_individual['dim'][i] = lower_bound
+            elif not lower_bound_closed and value <= lower_bound:
+                validated_individual['dim'][i] = lower_bound + 0.0000001
 
         return validated_individual
 
