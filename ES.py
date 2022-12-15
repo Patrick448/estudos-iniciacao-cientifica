@@ -247,6 +247,8 @@ class ESAlgorithm:
     using_global_bounds = False
     global_variable_bounds = {}
     dimension_mapping = []
+    num_dimensions = 0
+    parser_expression_evaluator = None
 
     def __init__(self):
         self.evaluation_expression = None
@@ -259,18 +261,29 @@ class ESAlgorithm:
         self.using_global_bounds = False
         self.global_variable_bounds = {'upper': float('inf'), 'lower': float('-inf')}
         self.variable_bounds_test = []
+        self.num_dimensions = 0
 
     def set_evaluation_function(self, func):
         self.evaluation_function = func
 
+    def default_expression_evaluator(self, ind):
+        pass
+
     def set_evaluation_expression(self, expression):
         self.evaluation_expression = expression
+        self.parser_expression_evaluator = parser.parse(self.evaluation_expression).evaluate
+
 
     def set_interval_validator(self, expression):
         self.interval_validator = expression
 
     def set_dimension_mapping(self, mapping):
         self.dimension_mapping = mapping
+        self.num_dimensions = len(mapping)
+
+    def set_num_dimensions(self, num):
+        self.num_dimensions = num
+        self.variable_bounds_test = [None]*self.num_dimensions
 
     def set_global_variable_bounds(self, upper_bound=float('inf'), lower_bound=float('-inf')):
         self.using_global_bounds = True
@@ -278,7 +291,7 @@ class ESAlgorithm:
 
     def set_variable_bounds(self, variable, upper_bound=float('inf'), upper_bound_closed=True,
                             lower_bound=float('-inf'), lower_bound_closed=True):
-        self.using_global_bounds=False
+        self.using_global_bounds = False
         self.variable_bounds[variable] = {'upper':
                                               {'value': upper_bound, 'closed': upper_bound_closed},
                                           'lower':
@@ -293,6 +306,16 @@ class ESAlgorithm:
 
     def evaluate(self, expr, **kwargs):
         return parser.parse(expr).evaluate(kwargs)
+
+    def evaluate_test(self, ind):
+
+        if self.evaluation_expression is not None:
+            dim_dict = {}
+            for i, key in enumerate(self.dimension_mapping):
+                dim_dict[key] = ind['dim'][i]
+            return self.parser_expression_evaluator(dim_dict)
+        elif self.evaluation_function is not None:
+            return self.evaluation_function(ind['dim'])
 
     def validate(self, individual):
 
@@ -456,6 +479,47 @@ class ESAlgorithm:
                     mutated_ind = self.validate(mutated_ind)
                     mutated_ind['eval'] = self.evaluate(self.evaluation_expression,
                                                    **mutated_ind['dim'])  # faz avaliação
+                    offspring.append(mutated_ind)
+
+            offspring_and_parents = population + offspring
+            best = sorted(offspring_and_parents, key=lambda i: i['eval'])
+            population = best[0:num_parents]
+
+        return population
+
+
+    def populational_non_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
+                                      num_parents=0, num_offspring=0):
+        np.random.seed(seed)
+        population = []
+        t = 0
+
+        for i in range(num_parents):
+            individual = {'dim': [0]*self.num_dimensions, 'sigma': [0]*self.num_dimensions}
+            for d in range(self.num_dimensions):
+                individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
+                individual['sigma'][d] = np.random.uniform(0, 1, 1)[0]
+            individual = self.validate_test(individual)
+            evaluation = self.evaluate_test(individual)
+            individual['eval'] = evaluation
+            population.append(individual)
+
+        # todo: mudar criterio para chamadas da função objetivo talvez
+
+        for i in range(iter):
+            t += 1
+            offspring = []
+
+            for parent in population:
+                for j in range(math.ceil(num_offspring / num_parents)):
+                    mutated_ind = {'dim': [0]*self.num_dimensions, 'sigma': [0]*self.num_dimensions}
+                    for i in range(len(parent['dim'])):  # muta cada uma das dimensões e seus sigmas
+                        mutated_ind['sigma'][i] = parent['sigma'][i] * math.exp(
+                            np.random.normal(0, sigma_var ** 2)) * math.exp(np.random.normal(0, sigma_var ** 2))
+                        mutated_ind['dim'][i] = parent['dim'][i] + np.random.normal(0, mutated_ind['sigma'][i])
+
+                    mutated_ind = self.validate_test(mutated_ind)
+                    mutated_ind['eval'] = self.evaluate_test(mutated_ind)  # faz avaliação
                     offspring.append(mutated_ind)
 
             offspring_and_parents = population + offspring
