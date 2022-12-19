@@ -63,8 +63,6 @@ def alg1plus1ES(expr="", validator=None, sigma=1.0, c=0.817, n=10, iter=100, see
         else:
             A.append(0)
 
-
-
         if t % n == 0:
             # get successes and failures from at most 10n entries in A
             window = A[-10 * n:]
@@ -259,7 +257,11 @@ class ESAlgorithm:
         self.success_history = []
         self.variable_bounds = {}
         self.using_global_bounds = False
-        self.global_variable_bounds = {'upper': float('inf'), 'lower': float('-inf')}
+        self.global_variable_bounds = {'upper':
+                                           {'value': float('inf'), 'closed': True},
+                                       'lower':
+                                           {'value': float('-inf'), 'closed': True}
+                                       }
         self.variable_bounds_test = []
         self.num_dimensions = 0
 
@@ -273,7 +275,6 @@ class ESAlgorithm:
         self.evaluation_expression = expression
         self.parser_expression_evaluator = parser.parse(self.evaluation_expression).evaluate
 
-
     def set_interval_validator(self, expression):
         self.interval_validator = expression
 
@@ -283,11 +284,16 @@ class ESAlgorithm:
 
     def set_num_dimensions(self, num):
         self.num_dimensions = num
-        self.variable_bounds_test = [None]*self.num_dimensions
+        self.variable_bounds_test = [None] * self.num_dimensions
 
-    def set_global_variable_bounds(self, upper_bound=float('inf'), lower_bound=float('-inf')):
+    def set_global_variable_bounds(self, upper_bound=float('inf'), upper_bound_closed=True, lower_bound=float('-inf'),
+                                   lower_bound_closed=True):
         self.using_global_bounds = True
-        self.global_variable_bounds = {'upper': upper_bound, 'lower': lower_bound}
+        self.global_variable_bounds = {'upper':
+                                           {'value': upper_bound, 'closed': upper_bound_closed},
+                                       'lower':
+                                           {'value': lower_bound, 'closed': lower_bound_closed}
+                                       }
 
     def set_variable_bounds(self, variable, upper_bound=float('inf'), upper_bound_closed=True,
                             lower_bound=float('-inf'), lower_bound_closed=True):
@@ -298,11 +304,11 @@ class ESAlgorithm:
                                               {'value': lower_bound, 'closed': lower_bound_closed}}
 
     def set_variable_bounds_test(self, variable, upper_bound=float('inf'), upper_bound_closed=True,
-                            lower_bound=float('-inf'), lower_bound_closed=True):
+                                 lower_bound=float('-inf'), lower_bound_closed=True):
         self.variable_bounds_test[variable] = {'upper':
-                                              {'value': upper_bound, 'closed': upper_bound_closed},
-                                          'lower':
-                                              {'value': lower_bound, 'closed': lower_bound_closed}}
+                                                   {'value': upper_bound, 'closed': upper_bound_closed},
+                                               'lower':
+                                                   {'value': lower_bound, 'closed': lower_bound_closed}}
 
     def evaluate(self, expr, **kwargs):
         return parser.parse(expr).evaluate(kwargs)
@@ -317,18 +323,30 @@ class ESAlgorithm:
         elif self.evaluation_function is not None:
             return self.evaluation_function(ind['dim'])
 
+    def get_bound_value(self, dimension, bound="upper"):
+
+        if self.using_global_bounds:
+            return self.global_variable_bounds[bound]['value']
+        else:
+            return self.variable_bounds[dimension][bound]['value']
+
+
     def validate(self, individual):
 
-        #todo: check if global bounds are enabled, if true validate using it. if false, validade like before
+        # todo: check if global bounds are enabled, if true validate using it. if false, validade like before
         validated_individual = individual
         for key in individual['dim']:
-            if self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] > self.variable_bounds[key]['upper']['value']:
+            if self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] > \
+                    self.variable_bounds[key]['upper']['value']:
                 validated_individual['dim'][key] = self.variable_bounds[key]['upper']['value']
-            elif not self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] >= self.variable_bounds[key]['upper']['value']:
+            elif not self.variable_bounds[key]['upper']['closed'] and individual['dim'][key] >= \
+                    self.variable_bounds[key]['upper']['value']:
                 validated_individual['dim'][key] = self.variable_bounds[key]['upper']['value'] - 0.0000001
-            elif self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] < self.variable_bounds[key]['lower']['value']:
+            elif self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] < \
+                    self.variable_bounds[key]['lower']['value']:
                 validated_individual['dim'][key] = self.variable_bounds[key]['lower']['value']
-            elif not self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] <= self.variable_bounds[key]['lower']['value']:
+            elif not self.variable_bounds[key]['lower']['closed'] and individual['dim'][key] <= \
+                    self.variable_bounds[key]['lower']['value']:
                 validated_individual['dim'][key] = self.variable_bounds[key]['lower']['value'] + 0.0000001
 
         return validated_individual
@@ -338,10 +356,10 @@ class ESAlgorithm:
         # todo: check if global bounds are enabled, if true validate using it. if false, validade like before
         validated_individual = individual
 
-        upper_bound = self.global_variable_bounds['upper']
-        lower_bound = self.global_variable_bounds['lower']
-        upper_bound_closed = True
-        lower_bound_closed = True
+        upper_bound = self.global_variable_bounds['upper']['value']
+        lower_bound = self.global_variable_bounds['lower']['value']
+        upper_bound_closed = self.global_variable_bounds['upper']['closed']
+        lower_bound_closed = self.global_variable_bounds['lower']['closed']
         for i, value in enumerate(individual['dim']):
 
             if not self.using_global_bounds:
@@ -378,7 +396,7 @@ class ESAlgorithm:
 
         for i in range(iter):
             t += 1
-            mutated_ind = {'dim':{}}
+            mutated_ind = {'dim': {}}
 
             # mutate individual
             for key in ind['dim']:
@@ -409,7 +427,7 @@ class ESAlgorithm:
         return p
 
     def populational_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
-                                      num_parents=0, num_offspring=0):
+                                  num_parents=0, num_offspring=0):
         np.random.seed(seed)
         population = []
         t = 0
@@ -433,11 +451,13 @@ class ESAlgorithm:
             for parent in population:
                 for j in range(math.ceil(num_offspring / num_parents)):
                     mutated_ind = {'dim': {}, 'sigma': None}
-                    mutated_ind['sigma'] = parent['sigma'] * math.exp(np.random.normal(0, sigma_var ** 2))  # muta o sigma
+                    mutated_ind['sigma'] = parent['sigma'] * math.exp(
+                        np.random.normal(0, sigma_var ** 2))  # muta o sigma
                     for key in parent['dim']:  # muta cada uma das dimensões e seus sigmas
                         mutated_ind['dim'][key] = parent['dim'][key] + np.random.normal(0, mutated_ind['sigma'])
                     mutated_ind = self.validate(mutated_ind)
-                    mutated_ind['eval'] = self.evaluate(self.evaluation_expression, **mutated_ind['dim'])  # faz avaliação
+                    mutated_ind['eval'] = self.evaluate(self.evaluation_expression,
+                                                        **mutated_ind['dim'])  # faz avaliação
                     offspring.append(mutated_ind)
 
             offspring_and_parents = population + offspring
@@ -478,7 +498,7 @@ class ESAlgorithm:
 
                     mutated_ind = self.validate(mutated_ind)
                     mutated_ind['eval'] = self.evaluate(self.evaluation_expression,
-                                                   **mutated_ind['dim'])  # faz avaliação
+                                                        **mutated_ind['dim'])  # faz avaliação
                     offspring.append(mutated_ind)
 
             offspring_and_parents = population + offspring
@@ -487,15 +507,97 @@ class ESAlgorithm:
 
         return population
 
+    def one_plus_one_ES_test(self, sigma=1.0, c=0.817, n=10, iter=100, seed=0):
+        np.random.seed(seed)
+        p = []
+        A = []
+        t = 0
+        ind = {'dim': [0] * self.num_dimensions}
 
-    def populational_non_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
-                                      num_parents=0, num_offspring=0):
+        for d in range(self.num_dimensions):
+            ind['dim'][d] = np.random.uniform(self.get_bound_value(d, "lower"), self.get_bound_value(d, "upper"), 1)[0]
+
+        ind = self.validate_test(ind)
+        ind['eval'] = self.evaluate_test(ind)
+        p.append(ind)
+
+        for i in range(iter):
+            t += 1
+            mutated_ind = {'dim': [0] * self.num_dimensions}
+
+            # mutate individual
+            for d in range(self.num_dimensions):
+                mutated_ind['dim'][d] = ind['dim'][d] + sigma * np.random.normal()
+
+            mutated_ind = self.validate_test(mutated_ind)
+            # calculate new phi based on the mutation
+            mutated_ind['eval'] = self.evaluate_test(mutated_ind)
+
+            if mutated_ind['eval'] < ind['eval']:
+                ind = mutated_ind
+                A.append(1)
+                p.append(mutated_ind)
+            else:
+                A.append(0)
+
+            if t % n == 0:
+                # get successes and failures from at most 10n entries in A
+                window = A[-10 * n:]
+                success = sum(window)
+                failure = abs(success - len(window))
+                ps = success / (success + failure)
+                if ps < 1 / 5:
+                    sigma = sigma * c
+                elif ps > 1 / 5:
+                    sigma = sigma / c
+
+        return p
+    def populational_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
+                                  num_parents=0, num_offspring=0):
         np.random.seed(seed)
         population = []
         t = 0
 
         for i in range(num_parents):
-            individual = {'dim': [0]*self.num_dimensions, 'sigma': [0]*self.num_dimensions}
+            individual = {'dim': [0] * self.num_dimensions, 'sigma': None}
+            for d in range(self.num_dimensions):
+                individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
+            individual['sigma'] = np.random.uniform(0, 1, 1)[0]
+            individual = self.validate_test(individual)
+            evaluation = self.evaluate_test(individual)
+            individual['eval'] = evaluation
+            population.append(individual)
+
+        # todo: mudar criterio para chamadas da função objetivo talvez
+
+        for i in range(iter):
+            t += 1
+            offspring = []
+
+            for parent in population:
+                for j in range(math.ceil(num_offspring / num_parents)):
+                    mutated_ind = {'dim': [0] * self.num_dimensions, 'sigma': None}
+                    mutated_ind['sigma'] = parent['sigma'] * math.exp(np.random.normal(0, sigma_var ** 2))  # muta o sigma
+                    for d in range(self.num_dimensions):  # muta cada uma das dimensões e seus sigmas
+                        mutated_ind['dim'][d] = parent['dim'][d] + np.random.normal(0, mutated_ind['sigma'])
+                    mutated_ind = self.validate_test(mutated_ind)
+                    mutated_ind['eval'] = self.evaluate_test(mutated_ind)  # faz avaliação
+                    offspring.append(mutated_ind)
+
+            offspring_and_parents = population + offspring
+            best = sorted(offspring_and_parents, key=lambda i: i['eval'])
+            population = best[0:num_parents]
+
+        return population
+
+    def populational_non_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
+                                           num_parents=0, num_offspring=0):
+        np.random.seed(seed)
+        population = []
+        t = 0
+
+        for i in range(num_parents):
+            individual = {'dim': [0] * self.num_dimensions, 'sigma': [0] * self.num_dimensions}
             for d in range(self.num_dimensions):
                 individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
                 individual['sigma'][d] = np.random.uniform(0, 1, 1)[0]
@@ -512,7 +614,7 @@ class ESAlgorithm:
 
             for parent in population:
                 for j in range(math.ceil(num_offspring / num_parents)):
-                    mutated_ind = {'dim': [0]*self.num_dimensions, 'sigma': [0]*self.num_dimensions}
+                    mutated_ind = {'dim': [0] * self.num_dimensions, 'sigma': [0] * self.num_dimensions}
                     for i in range(len(parent['dim'])):  # muta cada uma das dimensões e seus sigmas
                         mutated_ind['sigma'][i] = parent['sigma'][i] * math.exp(
                             np.random.normal(0, sigma_var ** 2)) * math.exp(np.random.normal(0, sigma_var ** 2))
