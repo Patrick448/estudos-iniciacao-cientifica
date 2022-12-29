@@ -578,7 +578,7 @@ def cec22_test_func(x, nx, mx, func_num):
         z = [None] * nx
         x_bound = [100.0] * nx
 
-        if (nx != 2 | nx != 10 | nx != 20):
+        if (nx != 2 and nx != 10 and nx != 20):
             print("\nError: Test functions are only defined for D=2,10,20.\n")
 
         if (nx == 2) & (func_num == 6 | func_num == 7 | func_num == 8):

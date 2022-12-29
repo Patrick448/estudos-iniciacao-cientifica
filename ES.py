@@ -247,8 +247,13 @@ class ESAlgorithm:
     dimension_mapping = []
     num_dimensions = 0
     parser_expression_evaluator = None
+    evaluation_counter = 0
+    known_minimum = None
+    execution_history = {'checkpoints':[], 'values':[]}
 
     def __init__(self):
+        self.error_stop_criterion = 0
+        self.using_stop_criterion = False
         self.evaluation_expression = None
         self.evaluation_function = None
         self.interval_validator = None
@@ -264,9 +269,18 @@ class ESAlgorithm:
                                        }
         self.variable_bounds_test = []
         self.num_dimensions = 0
+        self.execution_history = {'checkpoints': [], 'values': []}
+        self.known_minimum = None
 
     def set_evaluation_function(self, func):
         self.evaluation_function = func
+
+    def reset_execution_history(self):
+        self.execution_history = {'checkpoints': [], 'values': []}
+
+    def add_checkpoint(self, checkpoint, value):
+        self.execution_history['checkpoints'].append(checkpoint)
+        self.execution_history['values'].append(value)
 
     def default_expression_evaluator(self, ind):
         pass
@@ -285,6 +299,31 @@ class ESAlgorithm:
     def set_num_dimensions(self, num):
         self.num_dimensions = num
         self.variable_bounds_test = [None] * self.num_dimensions
+
+    def set_error_stop_criterion(self, error):
+        self.using_stop_criterion = True
+        self.error_stop_criterion = error
+
+    def set_known_minimum(self, value):
+        self.known_minimum = value
+
+    def abs_error(self, val):
+        return abs(val - self.known_minimum)
+
+    def stop(self, val):
+        if self.using_stop_criterion and self.abs_error(val) <= self.error_stop_criterion:
+            return True
+
+        return False
+
+    def calculate_checkpoint(self, k, max_iter):
+        return self.num_dimensions**(k/5 - 3)*max_iter
+
+    def get_execution_history(self):
+        return self.execution_history
+
+    def get_evaluations_count(self):
+        return self.evaluation_counter
 
     def set_global_variable_bounds(self, upper_bound=float('inf'), upper_bound_closed=True, lower_bound=float('-inf'),
                                    lower_bound_closed=True):
@@ -314,6 +353,7 @@ class ESAlgorithm:
         return parser.parse(expr).evaluate(kwargs)
 
     def evaluate_test(self, ind):
+        self.evaluation_counter += 1
 
         if self.evaluation_expression is not None:
             dim_dict = {}
@@ -329,7 +369,6 @@ class ESAlgorithm:
             return self.global_variable_bounds[bound]['value']
         else:
             return self.variable_bounds[dimension][bound]['value']
-
 
     def validate(self, individual):
 
@@ -424,6 +463,8 @@ class ESAlgorithm:
                 elif ps > 1 / 5:
                     sigma = sigma / c
 
+
+
         return p
 
     def populational_isotropic_ES(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
@@ -508,6 +549,7 @@ class ESAlgorithm:
         return population
 
     def one_plus_one_ES_test(self, sigma=1.0, c=0.817, n=10, iter=100, seed=0):
+        self.evaluation_counter = 0
         np.random.seed(seed)
         p = []
         A = []
@@ -551,9 +593,14 @@ class ESAlgorithm:
                 elif ps > 1 / 5:
                     sigma = sigma / c
 
+            if len(p)>=2 and  self.stop(p[len(p) - 1]['eval']):
+                break
+
         return p
+
     def populational_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
-                                  num_parents=0, num_offspring=0):
+                                       num_parents=0, num_offspring=0):
+        self.evaluation_counter = 0
         np.random.seed(seed)
         population = []
         t = 0
@@ -577,7 +624,8 @@ class ESAlgorithm:
             for parent in population:
                 for j in range(math.ceil(num_offspring / num_parents)):
                     mutated_ind = {'dim': [0] * self.num_dimensions, 'sigma': None}
-                    mutated_ind['sigma'] = parent['sigma'] * math.exp(np.random.normal(0, sigma_var ** 2))  # muta o sigma
+                    mutated_ind['sigma'] = parent['sigma'] * math.exp(
+                        np.random.normal(0, sigma_var ** 2))  # muta o sigma
                     for d in range(self.num_dimensions):  # muta cada uma das dimensões e seus sigmas
                         mutated_ind['dim'][d] = parent['dim'][d] + np.random.normal(0, mutated_ind['sigma'])
                     mutated_ind = self.validate_test(mutated_ind)
@@ -588,13 +636,19 @@ class ESAlgorithm:
             best = sorted(offspring_and_parents, key=lambda i: i['eval'])
             population = best[0:num_parents]
 
+            if self.stop(population[0]['eval']):
+                break
+
         return population
 
     def populational_non_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
                                            num_parents=0, num_offspring=0):
+        self.evaluation_counter = 0
         np.random.seed(seed)
         population = []
         t = 0
+        k_checkpoint = 0
+        self.reset_execution_history()
 
         for i in range(num_parents):
             individual = {'dim': [0] * self.num_dimensions, 'sigma': [0] * self.num_dimensions}
@@ -628,4 +682,13 @@ class ESAlgorithm:
             best = sorted(offspring_and_parents, key=lambda i: i['eval'])
             population = best[0:num_parents]
 
+            if self.get_evaluations_count() >= self.calculate_checkpoint(k_checkpoint, iter*num_offspring):
+                error = self.abs_error(population[0]['eval'])
+                self.add_checkpoint(self.get_evaluations_count(), error)
+                k_checkpoint += 1
+
+            if self.stop(population[0]['eval']):
+                break
+
+        self.add_checkpoint(self.get_evaluations_count(), self.abs_error(population[0]['eval']))
         return population
