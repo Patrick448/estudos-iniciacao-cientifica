@@ -41,7 +41,7 @@ def plot_1(experiments):
     plt.show()
 
 
-def plot_2(error_history):
+def plot_2(error_history, title):
     """
     Plots the error history of the experiment for one of the algorithms
     :param experiment_error_history:
@@ -50,7 +50,8 @@ def plot_2(error_history):
     #checkpoints = experiment_error_history['checkpoints']
     #values = experiment_error_history['values']
 
-    fig, axs = plt.subplots()
-    axs.plot(error_history, 'bo')
+    fig, ax = plt.subplots()
+    ax.plot(error_history)
+    ax.set_title(title)
     plt.show()
 

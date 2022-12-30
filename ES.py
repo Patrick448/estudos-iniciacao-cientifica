@@ -555,6 +555,8 @@ class ESAlgorithm:
         A = []
         t = 0
         ind = {'dim': [0] * self.num_dimensions}
+        k_checkpoint = 0
+        self.reset_execution_history()
 
         for d in range(self.num_dimensions):
             ind['dim'][d] = np.random.uniform(self.get_bound_value(d, "lower"), self.get_bound_value(d, "upper"), 1)[0]
@@ -593,9 +595,15 @@ class ESAlgorithm:
                 elif ps > 1 / 5:
                     sigma = sigma / c
 
+            if self.get_evaluations_count() >= self.calculate_checkpoint(k_checkpoint, iter):
+                error = self.abs_error(p[len(p) - 1]['eval'])
+                self.add_checkpoint(self.get_evaluations_count(), error)
+                k_checkpoint += 1
+
             if len(p)>=2 and  self.stop(p[len(p) - 1]['eval']):
                 break
 
+        self.add_checkpoint(self.get_evaluations_count(), self.abs_error(p[len(p) - 1]['eval']))
         return p
 
     def populational_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
@@ -604,6 +612,8 @@ class ESAlgorithm:
         np.random.seed(seed)
         population = []
         t = 0
+        k_checkpoint = 0
+        self.reset_execution_history()
 
         for i in range(num_parents):
             individual = {'dim': [0] * self.num_dimensions, 'sigma': None}
@@ -636,9 +646,15 @@ class ESAlgorithm:
             best = sorted(offspring_and_parents, key=lambda i: i['eval'])
             population = best[0:num_parents]
 
+            if self.get_evaluations_count() >= self.calculate_checkpoint(k_checkpoint, iter*num_offspring):
+                error = self.abs_error(population[0]['eval'])
+                self.add_checkpoint(self.get_evaluations_count(), error)
+                k_checkpoint += 1
+
             if self.stop(population[0]['eval']):
                 break
 
+        self.add_checkpoint(self.get_evaluations_count(), self.abs_error(population[0]['eval']))
         return population
 
     def populational_non_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
