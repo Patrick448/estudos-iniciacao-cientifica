@@ -308,7 +308,10 @@ class ESAlgorithm:
         self.known_minimum = value
 
     def abs_error(self, val):
-        return abs(val - self.known_minimum)
+        if self.known_minimum:
+            return abs(val - self.known_minimum)
+
+        return 0
 
     def stop(self, val):
         if self.using_stop_criterion and self.abs_error(val) <= self.error_stop_criterion:
@@ -369,6 +372,14 @@ class ESAlgorithm:
             return self.global_variable_bounds[bound]['value']
         else:
             return self.variable_bounds[dimension][bound]['value']
+
+    def get_bound_value_test(self, dimension, bound="upper"):
+
+        if self.using_global_bounds:
+            return self.global_variable_bounds[bound]['value']
+        else:
+            return self.variable_bounds_test[dimension][bound]['value']
+
 
     def validate(self, individual):
 
@@ -559,7 +570,7 @@ class ESAlgorithm:
         self.reset_execution_history()
 
         for d in range(self.num_dimensions):
-            ind['dim'][d] = np.random.uniform(self.get_bound_value(d, "lower"), self.get_bound_value(d, "upper"), 1)[0]
+            ind['dim'][d] = np.random.uniform(self.get_bound_value_test(d, "lower"), self.get_bound_value_test(d, "upper"), 1)[0]
 
         ind = self.validate_test(ind)
         ind['eval'] = self.evaluate_test(ind)
@@ -607,7 +618,7 @@ class ESAlgorithm:
         return p
 
     def populational_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
-                                       num_parents=0, num_offspring=0):
+                                       num_parents=0, num_offspring=0, sigma_interval=(0.1, 10)):
         self.evaluation_counter = 0
         np.random.seed(seed)
         population = []
@@ -618,8 +629,12 @@ class ESAlgorithm:
         for i in range(num_parents):
             individual = {'dim': [0] * self.num_dimensions, 'sigma': None}
             for d in range(self.num_dimensions):
-                individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
-            individual['sigma'] = np.random.uniform(0, 1, 1)[0]
+                # individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
+                individual['dim'][d] = np.random.uniform(self.get_bound_value_test(d, "lower"), self.get_bound_value_test(d, "upper"), 1)[0]
+
+            # individual['sigma'] = np.random.uniform(0, 1, 1)[0]
+            individual['sigma'] = np.random.uniform(sigma_interval[0], sigma_interval[1], 1)[0]
+
             individual = self.validate_test(individual)
             evaluation = self.evaluate_test(individual)
             individual['eval'] = evaluation
@@ -658,7 +673,7 @@ class ESAlgorithm:
         return population
 
     def populational_non_isotropic_ES_test(self, dimension_gen_interval=(0, 0), sigma_var=0.5, iter=100, seed=0,
-                                           num_parents=0, num_offspring=0):
+                                           num_parents=0, num_offspring=0, sigma_interval=(0.1, 10)):
         self.evaluation_counter = 0
         np.random.seed(seed)
         population = []
@@ -669,8 +684,11 @@ class ESAlgorithm:
         for i in range(num_parents):
             individual = {'dim': [0] * self.num_dimensions, 'sigma': [0] * self.num_dimensions}
             for d in range(self.num_dimensions):
-                individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
-                individual['sigma'][d] = np.random.uniform(0, 1, 1)[0]
+                # individual['dim'][d] = np.random.uniform(dimension_gen_interval[0], dimension_gen_interval[1], 1)[0]
+                individual['dim'][d] = np.random.uniform(self.get_bound_value_test(d, "lower"), self.get_bound_value_test(d, "upper"), 1)[0]
+                # individual['sigma'][d] = np.random.uniform(0, 1, 1)[0]
+                individual['sigma'][d] = np.random.uniform(sigma_interval[0], sigma_interval[1], 1)[0]
+
             individual = self.validate_test(individual)
             evaluation = self.evaluate_test(individual)
             individual['eval'] = evaluation
