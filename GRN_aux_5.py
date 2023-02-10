@@ -152,7 +152,7 @@ def evaluation_5(ind_atual):
 
 
 def get_result_static():
-    #ind_atual = POPULACAO[qtd_progenitores]
+     #ind_atual = POPULACAO[qtd_progenitores]
     tauA = 1.25
     tauB = 4
     tauC = 1.02
@@ -175,4 +175,28 @@ def get_result_static():
     pA, pB, pC, pD, pE = organiza_pontos(solution)
     #return calcula_diferenca(pA, pB, pC, pD, pE)
 
+    return pA, pB, pC, pD, pE
+
+def get_results(ind_atual):
+    #ind_atual = POPULACAO[qtd_progenitores]
+    tauA = ind_atual[0]
+    tauB = ind_atual[1]
+    tauC = ind_atual[2]
+    tauD = ind_atual[3]
+    tauE = ind_atual[4]
+    kA = ind_atual[5]
+    kB = ind_atual[6]
+    kC = ind_atual[7]
+    kD = ind_atual[8]
+    kE = ind_atual[9]
+    nA = ind_atual[10]
+    nB = ind_atual[11]
+    nC = ind_atual[12]
+    nD = ind_atual[13]
+    nE = ind_atual[14]
+
+
+    solution = odeint(twoBody, Y0, dobra_pontos, args=(
+        tauA, kA, int(nA), tauB, kB, int(nB), tauC, kC, int(nC), tauD, kD, int(nD), tauE, kE, int(nE),))
+    pA, pB, pC, pD, pE = organiza_pontos(solution)
     return pA, pB, pC, pD, pE
