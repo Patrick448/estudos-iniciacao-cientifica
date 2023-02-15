@@ -231,7 +231,7 @@ def twoBody__10(y, t, tauA, kAJ, nAJ, tauB, kBE, nBE, tauC, kCB, nCB, kCF, nCF, 
 def twoBody(y, t, tauA, kA, nA, tauB, kB, nB, tauC, kC, nC, tauD, kD, nD, tauE, kE, nE):
     ydot = np.empty((5,))
     
-    ydot[0] = ((1-(pow((y[4]/maximo_E),nA))/(pow((y[4]/maximo_A),nA)+pow(kA, nA)))-(y[0]/maximo_A)) / tauA
+    ydot[0] = ((1-(pow((y[4]/maximo_E),nA))/(pow((y[4]/maximo_E),nA)+pow(kA, nA)))-(y[0]/maximo_A)) / tauA
 
     ydot[1] = (((pow((y[0]/maximo_A), nB))/(pow((y[0]/maximo_A),nB) + pow(kB, nB))) - (y[1]/maximo_B)) / tauB
 
