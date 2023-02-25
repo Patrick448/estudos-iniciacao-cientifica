@@ -582,6 +582,7 @@ class ESAlgorithm:
 
             # mutate individual
             for d in range(self.num_dimensions):
+                #todo: a adição aqui deveria ser np.random.normal(0, pow(sigma, 2.0))
                 mutated_ind['dim'][d] = ind['dim'][d] + sigma * np.random.normal()
 
             mutated_ind = self.validate_test(mutated_ind)

@@ -80,6 +80,26 @@ def twoBody(y, t, tauA, kA, nA, tauB, kB, nB, tauC, kC, nC, tauD, kD, nD, tauE, 
     return ydot
 
 
+def twoBodyNew(y, t, tauA, kA, nA, tauB, kB, nB, tauC, kC, nC, tauD, kD, nD, tauE, kEB, kED, kEE, nEB, nED, nEE):
+    ydot = np.empty((5,))
+
+    ydot[0] = ((1 - (pow((y[4] / maximo_E), nA) / (pow((y[4] / maximo_E), nA) + pow(kA, nA)))) - (
+                y[0] / maximo_A)) / tauA
+
+    ydot[1] = (((pow((y[0] / maximo_A), nB)) / (pow((y[0] / maximo_A), nB) + pow(kB, nB))) - (y[1] / maximo_B)) / tauB
+
+    ydot[2] = (((pow((y[1] / maximo_B), nC)) / (pow((y[1] / maximo_B), nC) + pow(kC, nC))) - (y[2] / maximo_C)) / tauC
+
+    ydot[3] = (((pow((y[2] / maximo_C), nD)) / (pow((y[2] / maximo_C), nD) + pow(kD, nD))) - (y[3] / maximo_D)) / tauD
+
+    ydot[4] = ((((pow(y[1] / maximo_B, nEB) / (pow(y[1] / maximo_B, nEB) + pow(kEB, nEB))) * (
+                pow(y[3] / maximo_D, nED) / (pow(y[3] / maximo_D, nED) + pow(kED, nED)))) + (
+                            (pow(y[3] / maximo_D, nED) / (pow(y[3] / maximo_D, nED) + pow(kED, nED))) * (
+                                pow(y[4] / maximo_E, nEE) / (pow(y[4] / maximo_E, nEE) + pow(kEE, nEE))))) - (
+                           y[4] / maximo_E)) / tauE
+
+    return ydot
+
 def organiza_pontos(solucao):
     pA = []
     pB = []
@@ -199,4 +219,29 @@ def get_results(ind_atual):
     solution = odeint(twoBody, Y0, dobra_pontos, args=(
         tauA, kA, int(nA), tauB, kB, int(nB), tauC, kC, int(nC), tauD, kD, int(nD), tauE, kE, int(nE),))
     pA, pB, pC, pD, pE = organiza_pontos(solution)
+
+    print(calcula_diferenca(pA, pB, pC, pD, pE))
     return pA, pB, pC, pD, pE
+
+def diferenca_teste():
+    tauA = 1.25
+    tauB = 4
+    tauC = 1.02
+    tauD = 1.57
+    tauE = 3.43
+    kA = 0.72
+    kB = 0.5
+    kC = 0.45
+    kD = 0.51
+    kE = 0.52
+    nA = 13
+    nB = 4
+    nC = 3
+    nD = 4
+    nE = 16
+
+    solution = odeint(twoBody, Y0, dobra_pontos, args=(
+        tauA, kA, int(nA), tauB, kB, int(nB), tauC, kC, int(nC), tauD, kD, int(nD), tauE, kE, int(nE),))
+    pA, pB, pC, pD, pE = organiza_pontos(solution)
+
+    return calcula_diferenca(pA, pB, pC, pD, pE)
