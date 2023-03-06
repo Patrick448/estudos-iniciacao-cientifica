@@ -249,3 +249,108 @@ def evaluation(ind_atual):
     tauI, kIG, int(nIG), kIH, int(nIH), tauJ, kJI, int(nJI),))
     pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ = organiza_pontos(solution)
     return calcula_diferenca(pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ)
+
+def diferenca_teste():
+
+    ind_atual = [1.73,2,0.81,0.11, 1.23, 1.78, 1.14, 1.04, 3.47, 3.21,
+                    0.45, 0.56, 0.99, 0.77, 0.71, 0.66, 0.46, 0.48, 0.66, 0.99, 0.85, 0.61, 0.55, 0.46, 0.17,
+                    20, 9, 24, 12, 2, 2, 6, 4, 7, 24, 2, 7, 21, 20, 3 ]
+    tauA = ind_atual[0]
+    tauB = ind_atual[1]
+    tauC = ind_atual[2]
+    tauD = ind_atual[3]
+    tauE = ind_atual[4]
+    tauF = ind_atual[5]
+    tauG = ind_atual[6]
+    tauH = ind_atual[7]
+    tauI = ind_atual[8]
+    tauJ = ind_atual[9]
+    kAJ = ind_atual[10]
+    kBE = ind_atual[11]
+    kCB = ind_atual[12]
+    kCF = ind_atual[13]
+    kCA = ind_atual[14]
+    kDF = ind_atual[15]
+    kEJ = ind_atual[16]
+    kFA = ind_atual[17]
+    kGB = ind_atual[18]
+    kGF = ind_atual[19]
+    kGA = ind_atual[20]
+    kHF = ind_atual[21]
+    kIG = ind_atual[22]
+    kIH = ind_atual[23]
+    kJI = ind_atual[24]
+    nAJ = ind_atual[25]
+    nBE = ind_atual[26]
+    nCB = ind_atual[27]
+    nCF = ind_atual[28]
+    nCA = ind_atual[29]
+    nDF = ind_atual[30]
+    nEJ = ind_atual[31]
+    nFA = ind_atual[32]
+    nGB = ind_atual[33]
+    nGF = ind_atual[34]
+    nGA = ind_atual[35]
+    nHF = ind_atual[36]
+    nIG = ind_atual[37]
+    nIH = ind_atual[38]
+    nJI = ind_atual[39]
+
+    solution = odeint(twoBody, Y0, dobra_pontos, args=(
+    tauA, kAJ, int(nAJ), tauB, kBE, int(nBE), tauC, kCB, int(nCB), kCF, int(nCF), kCA, int(nCA), tauD, kDF, int(nDF),
+    tauE, kEJ, int(nEJ), tauF, kFA, int(nFA), tauG, kGB, int(nGB), kGF, int(nGF), kGA, int(nGA), tauH, kHF, int(nHF),
+    tauI, kIG, int(nIG), kIH, int(nIH), tauJ, kJI, int(nJI),))
+    pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ = organiza_pontos(solution)
+    print(" ".join([str(x) for x in pA]))
+    print(" ".join([str(x) for x in pB]))
+    print(" ".join([str(x) for x in pC]))
+    print(" ".join([str(x) for x in pD]))
+    print(" ".join([str(x) for x in pE]))
+    print(" ".join([str(x) for x in pF]))
+    print(" ".join([str(x) for x in pG]))
+    print(" ".join([str(x) for x in pH]))
+    print(" ".join([str(x) for x in pI]))
+    print(" ".join([str(x) for x in pJ]))
+    return calcula_diferenca(pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ)
+
+
+# tauA = 1.73
+# tauB = 2
+# tauC = 0.81
+# tauD = 0.11
+# tauE = 1.23
+# tauF = 1.78
+# tauG = 1.14
+# tauH = 1.04
+# tauI = 3.47
+# tauJ = 3.21
+# kAJ = 0.45 *
+# kBE = 0.56 *
+# kCB = 0.99
+# kCF = 0.77
+# kCA = 0.71
+# kDF = 0.66 *
+# kEJ = 0.46 *
+# kFA = 0.48 *
+# kGB = 0.66
+# kGF = 0.99
+# kGA = 0.85
+# kHF = 0.61 *
+# kIG = 0.55
+# kIH = 0.46
+# kJI = 0.17 *
+# nAJ = 20 *
+# nBE = 9 *
+# nCB = 24
+# nCF = 12
+# nCA = 2
+# nDF = 2 *
+# nEJ = 6 *
+# nFA = 4 *
+# nGB = 7
+# nGF = 24
+# nGA = 2
+# nHF = 7 *
+# nIG = 21
+# nIH = 20
+# nJI = 3 *
