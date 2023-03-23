@@ -244,4 +244,6 @@ def diferenca_teste():
         tauA, kA, int(nA), tauB, kB, int(nB), tauC, kC, int(nC), tauD, kD, int(nD), tauE, kE, int(nE),))
     pA, pB, pC, pD, pE = organiza_pontos(solution)
 
+    print(solution)
+
     return calcula_diferenca(pA, pB, pC, pD, pE)
