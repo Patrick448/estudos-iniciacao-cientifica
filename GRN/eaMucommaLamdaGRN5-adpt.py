@@ -6,7 +6,7 @@ from scipy.integrate import odeint
 import math
 import matplotlib
 
-arquivo = open("GRN5.txt", 'r')
+arquivo = open("experiments/GRN5.txt", 'r')
 
 x = []
 A = []

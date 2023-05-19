@@ -8,7 +8,7 @@ import matplotlib
 
 
 #Leitura do arquivo com os pontos de expressão gênica
-arquivo = open("GRN10.txt", 'r')
+arquivo = open("experiments/GRN10.txt", 'r')
 
 x = []
 A = []
