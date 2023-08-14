@@ -250,6 +250,58 @@ def evaluation(ind_atual):
     pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ = organiza_pontos(solution)
     return calcula_diferenca(pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ)
 
+def get_results(ind_atual):
+    tauA = ind_atual[0]
+    tauB = ind_atual[1]
+    tauC = ind_atual[2]
+    tauD = ind_atual[3]
+    tauE = ind_atual[4]
+    tauF = ind_atual[5]
+    tauG = ind_atual[6]
+    tauH = ind_atual[7]
+    tauI = ind_atual[8]
+    tauJ = ind_atual[9]
+    kAJ = ind_atual[10]
+    kBE = ind_atual[11]
+    kCB = ind_atual[12]
+    kCF = ind_atual[13]
+    kCA = ind_atual[14]
+    kDF = ind_atual[15]
+    kEJ = ind_atual[16]
+    kFA = ind_atual[17]
+    kGB = ind_atual[18]
+    kGF = ind_atual[19]
+    kGA = ind_atual[20]
+    kHF = ind_atual[21]
+    kIG = ind_atual[22]
+    kIH = ind_atual[23]
+    kJI = ind_atual[24]
+    nAJ = ind_atual[25]
+    nBE = ind_atual[26]
+    nCB = ind_atual[27]
+    nCF = ind_atual[28]
+    nCA = ind_atual[29]
+    nDF = ind_atual[30]
+    nEJ = ind_atual[31]
+    nFA = ind_atual[32]
+    nGB = ind_atual[33]
+    nGF = ind_atual[34]
+    nGA = ind_atual[35]
+    nHF = ind_atual[36]
+    nIG = ind_atual[37]
+    nIH = ind_atual[38]
+    nJI = ind_atual[39]
+
+    solution = odeint(twoBody, Y0, dobra_pontos, args=(
+    tauA, kAJ, int(nAJ), tauB, kBE, int(nBE), tauC, kCB, int(nCB), kCF, int(nCF), kCA, int(nCA), tauD, kDF, int(nDF),
+    tauE, kEJ, int(nEJ), tauF, kFA, int(nFA), tauG, kGB, int(nGB), kGF, int(nGF), kGA, int(nGA), tauH, kHF, int(nHF),
+    tauI, kIG, int(nIG), kIH, int(nIH), tauJ, kJI, int(nJI),))
+    pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ = organiza_pontos(solution)
+    print( calcula_diferenca(pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ))
+
+    return pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ
+
+
 def diferenca_teste():
 
     ind_atual = [1.73,2,0.81,0.11, 1.23, 1.78, 1.14, 1.04, 3.47, 3.21,

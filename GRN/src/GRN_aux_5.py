@@ -223,6 +223,36 @@ def get_results(ind_atual):
     print(calcula_diferenca(pA, pB, pC, pD, pE))
     return pA, pB, pC, pD, pE
 
+def get_results_new(ind_atual):
+   # ind_atual = [1.2163355099083872, 1.1264485098219865, 2.973714367061704, 2.952143123315177, 2.998260518457365, 0.5687249950503857, 0.4580723119903261, 0.46214892372246563, 0.6182568295500336, 0.5213082492659304, 0.7708877748759901, 0.1497642024548283, 4.254757908429968, 3.759370669969996, 4.784173526119725, 10.935884810737809, 24.595975874929724, 2.8109199678182635, 4.922623602327875, 1.804297289687443, 0.6961641316460799, 1.1805067448542073, 3.769380877770944, 0.6268588518301711, 0.7945926074279098, 0.8665901143646684, 1.1631405647512596, 2.3141178250393146, 1.2841062086785697, 0.7091739090057955, 2.245324305294896, 0.8208096283146853, 0.6911548119817139, 0.7874359961268611, 1.101498884676361, 0.7742237807425528, 0.9816157239798934, 70.97756457350062]
+
+    tauA = ind_atual[0]
+    tauB = ind_atual[1]
+    tauC = ind_atual[2]
+    tauD = ind_atual[3]
+    tauE = ind_atual[4]
+    kA = ind_atual[5]
+    kB = ind_atual[6]
+    kC = ind_atual[7]
+    kD = ind_atual[8]
+    kEB = ind_atual[9]
+    kED = ind_atual[10]
+    kEE = ind_atual[11]
+    nA = ind_atual[12]
+    nB = ind_atual[13]
+    nC = ind_atual[14]
+    nD = ind_atual[15]
+    nEB = ind_atual[16]
+    nED = ind_atual[17]
+    nEE = ind_atual[18]
+
+
+    solution = odeint(twoBodyNew, Y0, dobra_pontos, args=(tauA, kA, int(nA), tauB, kB, int(nB), tauC, kC, int(nC), tauD, kD, int(nD), tauE, kEB, kED, kEE, int(nEB), int(nED), int(nEE),))
+    pA, pB, pC, pD, pE = organiza_pontos(solution)
+
+    print(calcula_diferenca(pA, pB, pC, pD, pE))
+    return pA, pB, pC, pD, pE
+
 def diferenca_teste():
     tauA = 1.25
     tauB = 4
