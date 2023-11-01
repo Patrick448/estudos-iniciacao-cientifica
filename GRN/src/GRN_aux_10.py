@@ -297,7 +297,7 @@ def get_results(ind_atual):
     tauE, kEJ, int(nEJ), tauF, kFA, int(nFA), tauG, kGB, int(nGB), kGF, int(nGF), kGA, int(nGA), tauH, kHF, int(nHF),
     tauI, kIG, int(nIG), kIH, int(nIH), tauJ, kJI, int(nJI),))
     pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ = organiza_pontos(solution)
-    print( calcula_diferenca(pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ))
+    #print( calcula_diferenca(pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ))
 
     return pA, pB, pC, pD, pE, pF, pG, pH, pI, pJ
 
